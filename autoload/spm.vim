@@ -2,7 +2,7 @@ scriptencoding utf-8
 "/**
 " * @file spm.vim
 " * @author naoyuki onishi <naoyuki1019 at gmail.com>
-" * @version 0.1
+" * @version 1.0
 " */
 
 if exists("g:loaded_spm")
@@ -129,7 +129,7 @@ function! spm#clone(url)
   "ランタイムパスに追加
   exec 'set runtimepath+='.g:spm_dict[a:url]['dir']
   let g:spm_dict[a:url]['sts'] = 0
-  let g:spm_dict[a:url]['msg'] = 'completion'
+  let g:spm_dict[a:url]['msg'] = 'loaded'
 
 endfunction
 
@@ -153,7 +153,7 @@ function! s:git_clone(url, dir)
   if !isdirectory(s:add_tail_ds(a:dir).'.git')
     let g:spm_dict[a:url]['sts'] = 1
     let g:spm_dict[a:url]['msg'] = 'an error occurred git-clone'
-    call confirm('an error occurred git-clone. plz check the url')
+    call confirm('an error occurred git-clone. plz check url')
     return 1
   endif
 

@@ -1,12 +1,30 @@
-# simple plugin manager
+# Simple Plugin Manager
 
-####.vimrc
+### How to use
+
+- :call spm#clone(url)
+
+    'git clone {url} {uri}'
+
+- :call spm#pull()
+
+    'git pull' all repositories
+
+- :call spm#pull(url)
+
+    'git pull' partially matched url
+
+### About delete function
+
+This plugin does not have the function to delete the repository
+
+### .vimrc
 
 ```vim
 
 let s:spm_dir = '~/.vim/spm'
 
-if filereadable(fnamemodify(s:spm_dir, ':p').'autoload/spm.vim') "{{{
+if filereadable(fnamemodify(s:spm_dir,':p').'autoload/spm.vim') "{{{
 
   execute 'set runtimepath+='.s:spm_dir
 
