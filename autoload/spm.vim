@@ -13,6 +13,13 @@ let g:loaded_spm = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+if has("win32") || has("win95") || has("win64") || has("win16")
+  let s:is_win = 1
+  let s:ds = '\'
+else
+  let s:is_win = 0
+  let s:ds = '/'
+endif
 
 if !exists('g:spm_repodir')
   let g:spm_repodir = expand('<sfile>:p:h').'/../repos'
@@ -29,7 +36,7 @@ endfunction
 function! s:fix_ds(path)
   let l:path = a:path
   let l:path = substitute(l:path, '\v\/{2,}', '/', 'g')
-  if has("win32") || has("win95") || has("win64") || has("win16")
+  if 1 == s:is_win
     let l:path = substitute(l:path, '\/', '\\', 'g')
   endif
   return l:path
@@ -50,13 +57,52 @@ function! s:add_tail_ds(dir)
   let l:len = strlen(a:dir)
   let l:tail = l:dir[l:len-1]
   if '/' != l:tail && '\' != l:tail
-    if has("win32") || has("win95") || has("win64") || has("win16")
-      let l:dir = l:dir . '\'
-    else
-      let l:dir = l:dir . '/'
-    endif
+    let l:dir .= s:ds
   endif
   return l:dir
+endfunction
+
+function! spm#pull(...)
+
+  if 1 > a:0
+    let l:s = '.*'
+  else
+    let l:s = join(a:000, ' ')
+    let l:s = substitute(l:s, '\v([^\.])\*', '\1.\*', 'g')
+    let l:s = substitute(l:s, '\v([^\\])\.([^\*])', '\\.', 'g')
+    let l:s = substitute(l:s, '\v\s{1,}', '.*', 'g')
+  endif
+
+  let l:unmatchall = 1
+
+  for [l:url, l:dict] in items(g:spm_dict)
+
+    let l:n = match(l:url, l:s)
+    if -1 < l:n
+      let l:unmatchall = 0
+
+      let l:dir = fnamemodify(l:dict['dir'], ':p')
+      if 1 == s:is_win
+        let l:drive = l:dir[:stridx(l:dir, ':')]
+        let l:execute = '!'.l:drive.' & cd '.shellescape(l:dir).' & git pull'
+      else
+        let l:execute = '!cd '.shellescape(l:dir).'; git pull'
+      endif
+
+      let l:conf = confirm('execute? ['.l:execute.']', "Yyes\nNno")
+      if 1 != l:conf
+        continue
+      endif
+
+      silent execute l:execute
+
+    endif
+  endfor
+
+  if 1 == l:unmatchall
+    call confirm('there was no match url')
+  endif
+
 endfunction
 
 function! spm#clone(url)
@@ -93,16 +139,16 @@ function! s:git_clone(url, dir)
   let l:escaped_dir = shellescape(s:rm_tail_ds(a:dir))
   let l:execute = '!git clone '.l:escaped_url.' '.l:escaped_dir
 
-  " let l:conf = confirm('execute? ['.l:execute.']', "Yyes\nNno")
-  " if 1 != l:conf
-  "   let g:spm_dict[a:url]['sts'] = 2
-  "   let g:spm_dict[a:url]['msg'] = 'canceled git-clone'
-  "   return 2
-  " endif
+  if ! (has('gui_running') && 1 == s:is_win)
+    let l:conf = confirm('execute? ['.l:execute.']', "Yyes\nNno")
+    if 1 != l:conf
+      let g:spm_dict[a:url]['sts'] = 2
+      let g:spm_dict[a:url]['msg'] = 'canceled git-clone'
+      return 2
+    endif
+  endif
 
-  try
-    silent execute l:execute
-  endtry
+  silent execute l:execute
 
   if !isdirectory(s:add_tail_ds(a:dir).'.git')
     let g:spm_dict[a:url]['sts'] = 1

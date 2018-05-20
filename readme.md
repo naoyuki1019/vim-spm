@@ -1,24 +1,45 @@
 # simple plugin manager
 
-your .vimrc
-
+####.vimrc
 
 ```vim
 
 let s:spm_dir = '~/.vim/spm'
 
-if isdirectory(fnamemodify(s:spm_dir, ':p')) "{{{
+if filereadable(fnamemodify(s:spm_dir, ':p').'autoload/spm.vim') "{{{
 
-  execute 'set runtimepath^=' . s:spm_dir
+  execute 'set runtimepath+='.s:spm_dir
 
-  "plugins
-  call spm#clone('https://github.com/xxxx/yyyyy')
-  call spm#clone('https://github.com/xxxx/yyyyy')
-  call spm#clone('https://github.com/xxxx/yyyyy')
-  call spm#clone('https://github.com/xxxx/yyyyy')
-  call spm#clone('https://github.com/xxxx/yyyyy')
-  call spm#clone('https://github.com/xxxx/yyyyy')
+  "
+  " plugin 1
+  "
+  call spm#clone('https://github.com/hoge/plugin1')
+
+  "
+  " plugin 2
+  "
+  call spm#clone('https://github.com/naoyuki1019/vim-quickfilesearch2')
+  let g:qsf_lsfile = '.lsfile'
+  noremap <Leader>fs :<C-u>QFSFileSearch2<CR>
+
+  "
+  " plugin 3
+  "
+  call spm#clone('https://github.com/hoge/plugin3')
+
+  ....
+  ...
+  ..
+  .
 
 endif
+
+....
+...
+..
+.
+
+filetype plugin indent on
+syntax enable
 
 ```
