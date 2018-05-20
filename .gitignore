@@ -1,6 +1,7 @@
 repos
-.lsfile.bat
-.tags.bat
 .win.lsfile
 .win.tags
+.lsfile
+.tags
+
 
