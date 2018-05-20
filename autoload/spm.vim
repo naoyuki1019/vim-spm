@@ -46,6 +46,7 @@ function s:show_clone_info(list)
       call add(l:msg, 'remote | '.l:url)
       call add(l:msg, 'message| '.g:spm_dict[l:url]['msg'])
     endfor
+    call add(l:msg, '       |')
     echo join(l:msg, "\n")
   endif
 endfunction
@@ -175,7 +176,7 @@ function! s:git_clone(url, dir)
   let l:escaped_dir = shellescape(s:rm_tail_ds(a:dir))
   let l:execute = '!git clone '.l:escaped_url.' '.l:escaped_dir
 
-  if ! (has('gui_running'))
+  if !has('gui_running') && !has('nvim')
     let l:conf = confirm('execute? ['.l:execute.']', "Yyes\nNno")
     if 1 != l:conf
       let g:spm_dict[a:url]['sts'] = 2
