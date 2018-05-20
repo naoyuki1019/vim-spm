@@ -18,6 +18,10 @@
 
     'git pull' all repositories
 
+- :call spm#status()
+
+    show status
+
 ### About delete function
 
 This plugin does not have the function to delete the repository

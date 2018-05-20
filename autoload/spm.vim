@@ -34,7 +34,17 @@ augroup augroup#SPM
   autocmd VimEnter * call s:show_clone_info(s:clone_onload_list)
 augroup END
 
+function spm#status()
+  let l:list = []
+  for [l:url, l:dict] in items(g:spm_dict)
+    call add(l:list, l:url)
+  endfor
+  call sort(l:list)
+  call s:show_clone_info(l:list)
+endfunction
+
 function s:show_clone_info(list)
+  let l:list = a:list
   if 0 < len(a:list)
     let l:msg = []
     call add(l:msg, '"--------------------------------------------------')
@@ -47,7 +57,11 @@ function s:show_clone_info(list)
       call add(l:msg, 'message| '.g:spm_dict[l:url]['msg'])
     endfor
     call add(l:msg, '       |')
-    echo join(l:msg, "\n")
+    if has('gui_running') && 1 == s:is_win
+      call confirm(join(l:msg, "\n"))
+    else
+      echo join(l:msg, "\n")
+    endif
   endif
 endfunction
 
@@ -185,7 +199,11 @@ function! s:git_clone(url, dir)
     endif
   endif
 
-  execute l:execute
+  if has('gui_running') && 1 == s:is_win
+    silent execute l:execute
+  else
+    execute l:execute
+  endif
 
   if !isdirectory(s:add_tail_ds(a:dir).'.git')
     let g:spm_dict[a:url]['sts'] = 1
@@ -202,8 +220,12 @@ function! s:git_clone(url, dir)
 endfunction
 
 function! s:confirm(msg)
-  if has('osx') && has('gui_running')
+  if has('gui_running') && has('osx')
     echo (a:msg)
+  elseif has('gui_running') && 1 == s:is_win
+
+    " do nothing
+
   else
     call confirm(a:msg)
   endif
