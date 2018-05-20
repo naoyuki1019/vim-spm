@@ -22,10 +22,33 @@ else
 endif
 
 if !exists('g:spm_repodir')
-  let g:spm_repodir = expand('<sfile>:p:h').'/../repos'
+  let g:spm_repodir = fnamemodify(expand('<sfile>:p:h').'/../repos', ':p')
 endif
 
 let g:spm_dict = {}
+let s:clone_onload_list = []
+let s:clone_list = []
+
+augroup augroup#SPM
+  autocmd!
+  autocmd VimEnter * call s:show_clone_info(s:clone_onload_list)
+augroup END
+
+function s:show_clone_info(list)
+  if 0 < len(a:list)
+    let l:msg = []
+    call add(l:msg, '"--------------------------------------------------')
+    call add(l:msg, '" Simple Plugin Manager')
+    call add(l:msg, '" local: '.g:spm_repodir )
+    call add(l:msg, '"--------------------------------------------------')
+    for l:url in a:list
+      call add(l:msg, '       |')
+      call add(l:msg, 'remote | '.l:url)
+      call add(l:msg, 'message| '.g:spm_dict[l:url]['msg'])
+    endfor
+    echo join(l:msg, "\n")
+  endif
+endfunction
 
 function! s:uri(url)
   let l:n = match(a:url, '://')
@@ -94,7 +117,7 @@ function! spm#pull(...)
         continue
       endif
 
-      silent execute l:execute
+      execute l:execute
 
     endif
   endfor
@@ -105,31 +128,44 @@ function! spm#pull(...)
 
 endfunction
 
-function! spm#clone(url)
+function! spm#clone(...)
 
-  let l:dir = g:spm_repodir.'/'.s:uri(a:url)
+  if 1 > a:0
+    let s:clone_list = []
+    for [l:url, l:dict] in items(g:spm_dict)
+      call spm#clone(l:url)
+    endfor
+    call s:show_clone_info(s:clone_list)
+    return
+  endif
+
+  let l:url = a:000[0]
+  " call s:confirm(l:url)
+
+  let l:dir = g:spm_repodir.'/'.s:uri(l:url)
   let l:dir = s:fix_ds(l:dir)
   let l:dir = fnamemodify(l:dir, ':p')
   let l:dir = s:rm_tail_ds(l:dir)
-  " call confirm('l:dir='.l:dir)
-  let g:spm_dict[a:url] = {
+  let g:spm_dict[l:url] = {
         \'dir': l:dir,
         \'sts': 0,
         \'msg': ''
         \}
 
-  ".gitディレクトリが存在しなければGitClone
-  if !isdirectory(s:add_tail_ds(g:spm_dict[a:url]['dir']).'.git')
-    let l:git_clone = s:git_clone(a:url, g:spm_dict[a:url]['dir'])
+  call add(s:clone_list, l:url)
+
+  if !isdirectory(s:add_tail_ds(g:spm_dict[l:url]['dir']).'.git')
+    call add(s:clone_onload_list, l:url)
+    let l:git_clone = s:git_clone(l:url, g:spm_dict[l:url]['dir'])
     if 0 != l:git_clone
       return
     endif
+  else
+    let g:spm_dict[l:url]['sts'] = 0
+    let g:spm_dict[l:url]['msg'] = 'installed'
   endif
 
-  "ランタイムパスに追加
-  exec 'set runtimepath+='.g:spm_dict[a:url]['dir']
-  let g:spm_dict[a:url]['sts'] = 0
-  let g:spm_dict[a:url]['msg'] = 'loaded'
+  exec 'set runtimepath+='.g:spm_dict[l:url]['dir']
 
 endfunction
 
@@ -139,26 +175,37 @@ function! s:git_clone(url, dir)
   let l:escaped_dir = shellescape(s:rm_tail_ds(a:dir))
   let l:execute = '!git clone '.l:escaped_url.' '.l:escaped_dir
 
-  if ! (has('gui_running') && 1 == s:is_win)
+  if ! (has('gui_running'))
     let l:conf = confirm('execute? ['.l:execute.']', "Yyes\nNno")
     if 1 != l:conf
       let g:spm_dict[a:url]['sts'] = 2
-      let g:spm_dict[a:url]['msg'] = 'canceled git-clone'
+      let g:spm_dict[a:url]['msg'] = 'clone: canceled'
       return 2
     endif
   endif
 
-  silent execute l:execute
+  execute l:execute
 
   if !isdirectory(s:add_tail_ds(a:dir).'.git')
     let g:spm_dict[a:url]['sts'] = 1
-    let g:spm_dict[a:url]['msg'] = 'an error occurred git-clone'
-    call confirm('an error occurred git-clone. plz check url')
+    let g:spm_dict[a:url]['msg'] = 'clone: an error occurred. plz check url'
+    call s:confirm('an error occurred. plz check url')
     return 1
   endif
 
+  let g:spm_dict[a:url]['sts'] = 0
+  let g:spm_dict[a:url]['msg'] = 'clone: success'
+
   return 0
 
+endfunction
+
+function! s:confirm(msg)
+  if has('osx') && has('gui_running')
+    echo (a:msg)
+  else
+    call confirm(a:msg)
+  endif
 endfunction
 
 
