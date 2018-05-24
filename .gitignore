@@ -1,6 +1,6 @@
 repos
-.win.lsfile
-.win.tags
+.lsfile-win
+.tags-win
 .lsfile
 .tags
 
