@@ -26,12 +26,13 @@ if !exists('g:spm_repodir')
 endif
 
 let g:spm_dict = {}
+let s:loaded = 0
 let s:clone_onload_list = []
 let s:clone_list = []
 
 augroup augroup#SPM
   autocmd!
-  autocmd VimEnter * call s:show_clone_info(s:clone_onload_list)
+  autocmd VimEnter * call s:VimEnter()
 augroup END
 
 function spm#status()
@@ -43,7 +44,12 @@ function spm#status()
   call s:show_clone_info(l:list)
 endfunction
 
-function s:show_clone_info(list)
+function s:VimEnter()
+  let s:loaded = 1
+  call s:show_clone_info(s:clone_onload_list)
+endfunction
+
+function s:show_clone_info(list) "{{{
   let l:list = a:list
   if 0 < len(a:list)
     let l:msg = []
@@ -63,7 +69,7 @@ function s:show_clone_info(list)
       echo join(l:msg, "\n")
     endif
   endif
-endfunction
+endfunction "}}}
 
 function! s:uri(url)
   let l:n = match(a:url, '://')
@@ -100,7 +106,7 @@ function! s:add_tail_ds(dir)
   return l:dir
 endfunction
 
-function! spm#pull(...)
+function! spm#pull(...) "{{{
 
   if 1 > a:0
     let l:s = '.*'
@@ -141,7 +147,7 @@ function! spm#pull(...)
     call confirm('there was no match url')
   endif
 
-endfunction
+endfunction "}}}
 
 function! spm#clone(...)
 
@@ -155,7 +161,6 @@ function! spm#clone(...)
   endif
 
   let l:url = a:000[0]
-  " call s:confirm(l:url)
 
   let l:dir = g:spm_repodir.'/'.s:uri(l:url)
   let l:dir = s:fix_ds(l:dir)
@@ -190,7 +195,7 @@ function! s:git_clone(url, dir)
   let l:escaped_dir = shellescape(s:rm_tail_ds(a:dir))
   let l:execute = '!git clone '.l:escaped_url.' '.l:escaped_dir
 
-  if !has('gui_running') && !has('nvim')
+  if 1 == s:loaded || ( 0 == s:loaded && !has('gui_running') && !has('nvim'))
     let l:conf = confirm('execute? ['.l:execute.']', "Yyes\nNno")
     if 1 != l:conf
       let g:spm_dict[a:url]['sts'] = 2
@@ -208,7 +213,9 @@ function! s:git_clone(url, dir)
   if !isdirectory(s:add_tail_ds(a:dir).'.git')
     let g:spm_dict[a:url]['sts'] = 1
     let g:spm_dict[a:url]['msg'] = 'clone: an error occurred. plz check url'
-    call s:confirm('an error occurred. plz check url')
+    if 1 == s:loaded
+      call confirm('an error occurred. plz check url')
+    endif
     return 1
   endif
 
@@ -217,18 +224,6 @@ function! s:git_clone(url, dir)
 
   return 0
 
-endfunction
-
-function! s:confirm(msg)
-  if has('gui_running') && has('osx')
-    echo (a:msg)
-  elseif has('gui_running') && 1 == s:is_win
-
-    " do nothing
-
-  else
-    call confirm(a:msg)
-  endif
 endfunction
 
 
