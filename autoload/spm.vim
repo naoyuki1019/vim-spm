@@ -21,9 +21,7 @@ else
   let s:ds = '/'
 endif
 
-if !exists('g:spm_repodir')
-  let g:spm_repodir = fnamemodify(expand('<sfile>:p:h').'/../repos', ':p')
-endif
+let s:spm_repodir = get(g:, 'spm_repodir', fnamemodify(expand('<sfile>:p:h').'/../repos', ':p'))
 
 let g:spm_dict = {}
 let s:loaded = 0
@@ -55,7 +53,7 @@ function s:show_clone_info(list) "{{{
     let l:msg = []
     call add(l:msg, '"--------------------------------------------------')
     call add(l:msg, '" Simple Plugin Manager')
-    call add(l:msg, '" local: '.g:spm_repodir )
+    call add(l:msg, '" local: '.s:spm_repodir )
     call add(l:msg, '"--------------------------------------------------')
     for l:url in a:list
       call add(l:msg, '       |')
@@ -161,8 +159,7 @@ function! spm#clone(...)
   endif
 
   let l:url = a:000[0]
-
-  let l:dir = g:spm_repodir.'/'.s:uri(l:url)
+  let l:dir = s:addslashlast(s:spm_repodir).s:uri(l:url)
   let l:dir = s:fix_ds(l:dir)
   let l:dir = fnamemodify(l:dir, ':p')
   let l:dir = s:rm_tail_ds(l:dir)
@@ -226,7 +223,11 @@ function! s:git_clone(url, dir)
 
 endfunction
 
-
-let &cpo = s:save_cpo
-unlet s:save_cpo
-
+function! s:addslashlast(s)
+  let l:l = len(a:s)-1
+  let l:last = strpart(a:s, l, 1)
+  if '/' == l:last
+    return a:s
+  endif
+  return a:s.'/'
+endfunction
