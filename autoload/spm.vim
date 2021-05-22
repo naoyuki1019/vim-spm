@@ -21,7 +21,15 @@ else
   let s:ds = '/'
 endif
 
-let s:spm_repodir = get(g:, 'spm_repodir', fnamemodify(expand('<sfile>:p:h').'/../repos', ':p'))
+let s:spm_dir = get(g:, 'spm_dir', '')
+if '' == s:spm_dir
+  let s:spm_dir = fnamemodify('~/.vim/.spm')
+endif
+
+let s:spm_repodir = get(g:, 'spm_repodir', '')
+if '' == s:spm_repodir
+  let s:spm_repodir = fnamemodify(s:spm_dir.'/repos')
+endif
 
 let g:spm_dict = {}
 let s:loaded = 0
